@@ -4,7 +4,6 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.IO;
-using System.Threading;
 
 namespace Lesson_6_WebDriver
 {
@@ -15,6 +14,7 @@ namespace Lesson_6_WebDriver
         private IWebDriver driver;
         private string userName = "vadim.kuryan.vka";
         private string userPassword = "Vka_6463296";
+        private string mailAddress = "dragnir@tut.by";
 
         [SetUp]
         public void Setup()
@@ -53,7 +53,7 @@ namespace Lesson_6_WebDriver
             writeNewMail.Click();
 
             IWebElement mailTo = driver.FindElement(By.XPath("//*[@id='compose-field-1']"));
-            mailTo.SendKeys("dragnir@tut.by");
+            mailTo.SendKeys(mailAddress);
 
             IWebElement mailSubject = driver.FindElement(By.XPath("//*[@id='compose-field-subject-4']"));
             mailSubject.SendKeys("TestSubject");
@@ -68,15 +68,37 @@ namespace Lesson_6_WebDriver
             IWebElement sendLaterToday = driver.FindElement(By.XPath("//div[@class='ComposeTimeOptions-Label']"));
             sendLaterToday.Click();
 
-            IWebElement draftFolder = driver.FindElement(By.XPath("//a[@href='#draft']"));
-            draftFolder.Click();
+            WebElementVisible(By.XPath("//a[@href='#draft']")).Click();
+            WebElementVisible(By.XPath("//button[@aria-describedby='tooltip-0-2']")).Click();
 
             //Verify, that the mail presents in ‘Drafts’ folder.
+            string dratedMailPath = "//*[@title='TestSubject']";
+            Assert.IsTrue(WebElementVisible(By.XPath(dratedMailPath)).Displayed);
 
+            //Verify the draft content(addressee, subject and body – should be the same)
+            Assert.IsTrue(WebElementExist(By.XPath(dratedMailPath)).Displayed);
+            WebElementClickable(By.XPath(dratedMailPath)).Click();
 
-            Thread.Sleep(10000);
+            Assert.IsTrue(WebElementVisible(By.XPath("//*[contains(text(),'dragnir')]")).Displayed);
+            Assert.AreEqual("TestSubject", WebElementVisible(By.XPath("//*[@title='TestSubject']")).Text);
+            Assert.IsTrue(WebElementExist(By.XPath("//*[text()='TestBody']")).Enabled);
 
-            Assert.Pass();
+            //Send the mail.
+            WebElementClickable(By.XPath("//button[@aria-disabled='false']")).Click();
+
+            //Verify, that the mail disappeared from ‘Drafts’ folder.
+            WebElementVisible(By.XPath("//a[@href='#draft']")).Click();
+            WebElementVisible(By.XPath("//button[@aria-describedby='tooltip-0-2']")).Click();
+            Assert.IsTrue(WebElementClickable(By.XPath("//*[contains(text(),'dragnir')]")).Displayed);
+
+            //Verify, that the mail is in ‘Sent’ folder.
+            WebElementVisible(By.XPath("//a[@href='#sent']")).Click();
+            Assert.IsTrue(WebElementVisible(By.XPath(dratedMailPath)).Displayed);
+
+            //Log off.
+            WebElementVisible(By.CssSelector("[class = 'user-account__name']")).Click();
+            WebElementClickable(By.XPath(@"//a[@data-count='{""name"":""user-menu"",""id"":""exit""}']")).Click();
+
         }
 
         [TearDown]
@@ -89,6 +111,22 @@ namespace Lesson_6_WebDriver
         {
             var wait = new WebDriverWait(driver, new TimeSpan(0, 0, 5));
             wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(selector));
+
+            return driver.FindElement(selector);
+        }
+
+        public IWebElement WebElementClickable(By selector)
+        {
+            var wait = new WebDriverWait(driver, new TimeSpan(0, 0, 5));
+            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(selector));
+
+            return driver.FindElement(selector);
+        }
+
+        public IWebElement WebElementExist(By selector)
+        {
+            var wait = new WebDriverWait(driver, new TimeSpan(0, 0, 5));
+            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(selector));
 
             return driver.FindElement(selector);
         }
