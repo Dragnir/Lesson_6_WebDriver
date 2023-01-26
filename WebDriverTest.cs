@@ -20,7 +20,9 @@ namespace Lesson_6_WebDriver
         public void Setup()
         {
             string path = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
-            driver = new ChromeDriver(path + @"\drivers\");
+            ChromeOptions options = new ChromeOptions();
+            options.AddArgument("no-sandbox");
+            driver = new ChromeDriver(path + @"\drivers\", options);
             driver.Manage().Window.Maximize();
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
         }
@@ -30,7 +32,6 @@ namespace Lesson_6_WebDriver
         {
             driver.Navigate().GoToUrl(baseUrl);
 
-            //Login to the mail box.
             IWebElement loginButton = driver.FindElement(By.XPath("//*[text()='Log in']/ancestor::button"));
             loginButton.Click();
 
@@ -45,10 +46,8 @@ namespace Lesson_6_WebDriver
             IWebElement submit = driver.FindElement(By.CssSelector("[id = 'passp:sign-in']"));
             submit.Click();
 
-            //Assert, that the login is successful.
             Assert.AreEqual(userName, WebElementVisible(By.CssSelector("[class = 'user-account__name']")).Text);
 
-            //Create a new mail (fill addressee, subject and body fields).
             IWebElement writeNewMail = driver.FindElement(By.CssSelector("[class = 'Button2 Button2_type_link Button2_view_action Button2_size_m Layout-m__compose--pTDsx qa-LeftColumn-ComposeButton ComposeButton-m__root--fP-o9']"));
             writeNewMail.Click();
 
@@ -64,18 +63,15 @@ namespace Lesson_6_WebDriver
             IWebElement sendLater = driver.FindElement(By.XPath("//*[@class='Button2-Icon new__icon--1nFOX']/ancestor::button"));
             sendLater.Click();
 
-            //Save the mail as a draft.
             IWebElement sendLaterToday = driver.FindElement(By.XPath("//div[@class='ComposeTimeOptions-Label']"));
             sendLaterToday.Click();
 
             WebElementVisible(By.XPath("//a[@href='#draft']")).Click();
             WebElementVisible(By.XPath("//button[@aria-describedby='tooltip-0-2']")).Click();
 
-            //Verify, that the mail presents in ‘Drafts’ folder.
             string dratedMailPath = "//*[@title='TestSubject']";
             Assert.IsTrue(WebElementVisible(By.XPath(dratedMailPath)).Displayed);
 
-            //Verify the draft content(addressee, subject and body – should be the same)
             Assert.IsTrue(WebElementExist(By.XPath(dratedMailPath)).Displayed);
             WebElementClickable(By.XPath(dratedMailPath)).Click();
 
@@ -83,19 +79,15 @@ namespace Lesson_6_WebDriver
             Assert.AreEqual("TestSubject", WebElementVisible(By.XPath("//*[@title='TestSubject']")).Text);
             Assert.IsTrue(WebElementExist(By.XPath("//*[text()='TestBody']")).Enabled);
 
-            //Send the mail.
             WebElementClickable(By.XPath("//button[@aria-disabled='false']")).Click();
 
-            //Verify, that the mail disappeared from ‘Drafts’ folder.
             WebElementVisible(By.XPath("//a[@href='#draft']")).Click();
             WebElementVisible(By.XPath("//button[@aria-describedby='tooltip-0-2']")).Click();
             Assert.IsTrue(WebElementClickable(By.XPath("//*[contains(text(),'dragnir')]")).Displayed);
 
-            //Verify, that the mail is in ‘Sent’ folder.
             WebElementVisible(By.XPath("//a[@href='#sent']")).Click();
             Assert.IsTrue(WebElementVisible(By.XPath(dratedMailPath)).Displayed);
 
-            //Log off.
             WebElementVisible(By.CssSelector("[class = 'user-account__name']")).Click();
             WebElementClickable(By.XPath(@"//a[@data-count='{""name"":""user-menu"",""id"":""exit""}']")).Click();
 
